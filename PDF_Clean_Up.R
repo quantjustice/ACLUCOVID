@@ -3,6 +3,8 @@ library(tidyverse)
 library(janitor)
 library(eeptools)
 
+# setwd("/Volumes/GoogleDrive/My Drive/QJL/ACLU COVID Investigation")
+
 arapahoe_file <- "Data Files/Completed/Arapahoe.pdf"
 
 arapahoe_pdf_structure <- pdf_data(arapahoe_file)
