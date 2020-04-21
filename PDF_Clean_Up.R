@@ -86,7 +86,7 @@ larimer %>% View()
 
 ######################
 
-jefferson_file <-  "Data Files/Complete/Jefferson.pdf"
+jefferson_file <-  "Data Files/Completed/Jefferson.pdf"
 
 jefferson_pdf_structure <- pdf_data(jefferson_file)
 
@@ -164,5 +164,55 @@ jefferson %>% View()
 
 ######################
 
-jefferson_file <-  "Data Files/Jefferson.pdf"
+douglas_file <-  "Data Files/Completed/Douglas.pdf"
 
+douglas_pdf_structure <- pdf_data(douglas_file)
+
+douglas_pages <- lapply( 1:length(douglas_pdf_structure), function (x) {
+  
+  douglas_pdf_structure[[x]] %>%
+     arrange(x, y) %>% 
+     pivot_wider(id_cols = y, names_from = x, values_from = text) %>%  
+     arrange(y)  %>%  
+    add_column(d= "") %>%
+     unite(col = "Data", `29`:d, sep = " ", remove = TRUE, na.rm = TRUE) %>%
+    select(Data)
+    }
+  )
+
+douglas_pages
+
+douglas <- do.call(rbind, douglas_pages) %>%
+  mutate(Data = ifelse(Data == "", "UNKNOWN", Data)) %>%
+  filter(
+    # Data %in% race | 
+    # Data %in% ethnicity | 
+      grepl("00:00", Data) == TRUE |
+      grepl("00:00", lag(Data,1 ) ) == TRUE |
+      grepl("00:00", lag(Data,2 ) ) == TRUE 
+    
+  ) %>%
+
+   mutate(index = ceiling((1:n())/3),
+       labels = rep(c("DOB", "Race", "Ethnicity"), max(index) ) 
+       
+) %>%
+  spread(labels, Data) 
+
+douglas <- 
+douglas %>% 
+  separate(DOB, c("DOB", NA), sep = " ") %>%
+  
+  mutate(DOB = as.Date(DOB),
+         Age = floor(
+           age_calc(DOB,
+                    as.Date("2020-04-20"), 
+                    units = "years")
+         )
+                )   %>% 
+
+  mutate(`Last Name` = NA) %>%
+  select(`Last Name`, DOB, Race, Ethnicity, Age)
+
+
+douglas %>% View()
