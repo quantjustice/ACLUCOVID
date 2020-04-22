@@ -228,7 +228,7 @@ final_stats
   
 wb <- createWorkbook()
 
-for (location in levels(as.factor(final_stats$Location ))[c(13)] ) {
+for (location in levels(as.factor(final_stats$Location )) ) {
   
   sheetname <- location 
   addWorksheet(wb, sheetname, gridLines = FALSE)
