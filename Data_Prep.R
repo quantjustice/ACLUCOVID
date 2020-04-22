@@ -6,8 +6,8 @@ setwd("/Volumes/GoogleDrive/My Drive/QJL/ACLU COVID Investigation")
 
 current_pop <- read_csv("Data Files/jail_pop_cleaned.csv") %>% select(-X1)
 
-laplata <- read_csv("Data Files/Completed/La Plata.csv") %>%
-  mutate(Location = "La Plata",
+laplata_pueblo <- read_csv("Data Files/Completed/La Plata.csv") %>%
+  mutate(
          Percent = round(Count/Total*100,1) )
 
 jan_pop <- read_csv("Data Files/HB19-1297Data .csv")
@@ -126,7 +126,7 @@ cleaned_current_pop %>%
   summarize(Total = mean(n), Count = n()) %>%
   mutate(Percent = round(Count/Total*100,1)) %>%
   bind_rows(
-    laplata
+    laplata_pueblo
   ) 
 
 
@@ -169,7 +169,7 @@ jan_pop %>%
   
 jan_pop_stats
 
-
+jan_pop_stats %>% filter(Location == "Pueblo")
 ##########
 race_ethnicity_current <- 
   current_stats %>%
@@ -228,7 +228,7 @@ final_stats
   
 wb <- createWorkbook()
 
-for (location in levels(as.factor(final_stats$Location )[c(7:8)] )) {
+for (location in levels(as.factor(final_stats$Location ))[c(13)] ) {
   
   sheetname <- location 
   addWorksheet(wb, sheetname, gridLines = FALSE)
@@ -320,7 +320,7 @@ jail_pop <- paste0("In January, there were about ",
 writeData(wb, sheetname, jail_pop, startCol = 9, startRow = 2)
 
 print(p1)
-insertPlot(wb, sheetname, xy = c("S", 4), width = 10, height = 5,  fileType = "png", units = "in")
+insertPlot(wb, sheetname, xy = c("T", 4), width = 10, height = 5,  fileType = "png", units = "in")
 
 print(p2)
 insertPlot(wb, sheetname, xy = c("H", 4), width = 7.5, height = 5,  fileType = "png", units = "in")
