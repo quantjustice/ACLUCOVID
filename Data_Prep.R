@@ -12,14 +12,11 @@ laplata_pueblo <- read_csv("Data Files/Completed/La Plata.csv") %>%
 
 jan_pop <- read_csv("Data Files/HB19-1297Data .csv")
 
-
-#####
-# Who is  Over 65? 
+coloradopop <- read_csv("Data Files/SocialExplorer.csv")
 
 
 
-
-###################
+################
 # Calculate Demographic Percentages for Each Jail
 
 levels(as.factor(current_pop$Ethnicity))
@@ -165,22 +162,62 @@ jan_pop %>%
   mutate(Total = sum(Count)) %>%
   ungroup() %>%
   mutate(Percent = round(Count/Total*100,1)) %>%
-  mutate(Time = "January")
+  mutate(Time = "January Jail Pop")
   
 jan_pop_stats
 
 jan_pop_stats %>% filter(Location == "Pueblo")
+
+
+
+##################
+##################################
+# Clean Colorado Population Data #
+
+final_colorado_pop <- 
+coloradopop %>%
+  select(
+    Location = `Qualifying Name`,
+    Total = `Total Population:`,
+    `Race_WHITE` = `Total Population: White Alone`,
+    Race_BLACK = `Total Population: Black or African American Alone`,
+    `Race_NATIVE AMERICAN` = `Total Population: American Indian and Alaska Native Alone`,
+    Asian = `Total Population: Asian Alone`,
+    `Pacific Islands` = `Total Population: Native Hawaiian and Other Pacific Islander Alone`,
+    `Other` = `Total Population: Some Other Race Alone`,
+    `2+Races` = `Total Population: Two or More Races`,
+    `Ethnicity_NON-HISPANIC` = `Total Population: Not Hispanic or Latino`,
+    `Ethnicity_HISPANIC` = `Total Population: Hispanic or Latino`
+  ) %>%
+  mutate(`Race_OTHER` = Asian + `Pacific Islands` + Other + `2+Races`) %>%
+  select( -c(Asian, `Pacific Islands`, Other, `2+Races`) ) %>%
+  gather(Demographic, Count, -c(Location, Total)) %>%
+  separate(Demographic, c("Demographic", "Level"), sep = "_")  %>%
+  separate(Location, c("Location", NA), sep = " County") %>% 
+  arrange(Location, Demographic) %>% 
+  mutate(Percent = round(Count/Total*100, 2)) %>%
+  filter(Location %in% counties) %>%
+  mutate(Time = "Estimated County Pop")
+
+
+
+
 ##########
 race_ethnicity_current <- 
   current_stats %>%
   filter(!Demographic %in% c("Over60")) %>%
-  mutate(Time = "April")
+  mutate(Time = "April Jail Pop")
 
 
 final_stats <- 
   race_ethnicity_current  %>%
   bind_rows(jan_pop_stats) %>%
-  mutate(order = ifelse(Time == "April", 2, 1),
+  bind_rows(final_colorado_pop) %>%
+  mutate(order = case_when(
+      Time == "April Jail Pop" ~ 3,
+      Time == "January Jail Pop" ~ 2,
+      Time == "Estimated County Pop" ~ 1
+      ),
          order2 = 
            case_when(
              Level == "HISPANIC" ~ 1,
@@ -194,13 +231,14 @@ final_stats <-
              Demographic == "Race" & Level == "UNKNOWN" ~ 5
            ))
 
+
 final_stats_printout <-
    final_stats %>%
   ungroup() %>%
    mutate(Display = paste0(Percent, "% (", Count, ")")) %>%
   select(Location, Demographic, Level, Display, Time) %>% 
-  spread(Time, Display) %>%
-  select(Location, Demographic, Level, January, April)
+  spread(Time, Display) 
+
 
 ############
 over60_numbers <-  
@@ -269,7 +307,7 @@ p1<-
       
     )+ 
     scale_y_continuous(labels = function(x) paste0(round(x), "%"), expand = c(0, 0 ), limits = c(-1, max(graph_data_race$Percent) + 5)) +
-    geom_text(aes(label= paste0(round(Percent), "% (", round(Count), ")"), y = Percent + max(graph_data_race$Percent)/50), position = position_dodge(width = .9), size = 3  ) +
+    geom_text(aes(label= paste0(round(Percent), "%\n(", round(Count), ")"), y = Percent + max(graph_data_race$Percent)/50), position = position_dodge(width = .9), size = 3, vjust = 0  ) +
  #   geom_text(aes(label= paste0( "(n=", Total,")"), y = 0), position = position_dodge(width = .9), vjust = 1.5 ) +
     labs(x= "Race", y="Proportion of Jail Population, %", fill = "")  +
     coord_cartesian(clip = 'off')
@@ -296,7 +334,7 @@ ggplot( graph_data_ethnicity, aes(x = reorder(Level, order2), y = Percent, fill 
     
   )+ 
   scale_y_continuous(labels = function(x) paste0(round(x), "%"), expand = c(0, 0 ), limits = c(-1, max(graph_data_ethnicity$Percent) + 5)) +
-  geom_text(aes(label= paste0(round(Percent), "% (", round(Count), ")"), y = Percent + max(graph_data_ethnicity$Percent)/50), position = position_dodge(width = .9), size = 3  ) +
+  geom_text(aes(label= paste0(round(Percent), "%\n(", round(Count), ")"), y = Percent + max(graph_data_ethnicity$Percent)/50), position = position_dodge(width = .9), size = 3, vjust = 0 ) +
 #  geom_text(aes(label= paste0( "(n=", Total,")"), y = 0), position = position_dodge(width = .9), vjust = 1.5 ) +
   labs(x= "Ethnicity", y="Proportion of Jail Population, %", fill = "")  +
   coord_cartesian(clip = 'off')
@@ -313,9 +351,9 @@ graph_data_ethnicity[,c(2,4,7)] %>% unique() %>%
   
 
 jail_pop <- paste0("In January, there were about ", 
-                   max(jail_pops$January), " in ", 
+                   max(jail_pops$`January Jail Pop`), " in ", 
                    location, " jail, while in April, there were about ",  
-                   max(jail_pops$April))
+                   max(jail_pops$`April Jail Pop`))
 
 writeData(wb, sheetname, jail_pop, startCol = 9, startRow = 2)
 
@@ -329,7 +367,7 @@ insertPlot(wb, sheetname, xy = c("H", 4), width = 7.5, height = 5,  fileType = "
 
 
 
-saveWorkbook(wb, "Results/COVIDTracking.xlsx", overwrite = TRUE)
+saveWorkbook(wb, "Results/COVIDTracking2.xlsx", overwrite = TRUE)
 
 
 
