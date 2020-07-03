@@ -9,7 +9,7 @@ library(tidyverse)
 
 
 
-# setwd("/Volumes/GoogleDrive/My Drive/QJL/ACLU COVID Investigation")
+setwd("/Volumes/GoogleDrive/My Drive/QJL/ACLU COVID Investigation")
 
 ####################
 # Arapahoe 
@@ -34,8 +34,8 @@ arapahoe_pdf_structure <- pdf_data(arapahoe_file)    # Get coordinates of data i
        unite(col = "Ethnicity", `450`:`507`, sep = "", remove = TRUE, na.rm = TRUE) %>%  
        select(`Last Name`, DOB, Race, Ethnicity ) 
    }
-  
 )
+ 
  
 
 arapahoe <- do.call(rbind, arapahoe_pages) %>%
@@ -87,8 +87,6 @@ larimer_pdf_structure[[x]] %>%
   select(`Last Name`, DOB, Race, Ethnicity, Age )
     
 })
- 
-
 
 larimer <- do.call(rbind, larimer_pages) %>%
   mutate(Location = "Larimer")
@@ -195,8 +193,6 @@ douglas_pages <- lapply( 1:length(douglas_pdf_structure), function (x) {
     select(Data)
     }
   )
-
-
 
 douglas <- do.call(rbind, douglas_pages) %>%
   mutate(Data = ifelse(Data == "", "UNKNOWN", Data)) %>%
